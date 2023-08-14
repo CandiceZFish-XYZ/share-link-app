@@ -1,140 +1,119 @@
 import { type Facetime } from "@prisma/client";
-import { useState, useEffect } from "react";
-import { type ApiResponse } from "~/types/types";
-import { formatDate } from "~/utils/helper";
+import { useState } from "react";
+import { formatDate, fetchLinkWithCode } from "~/utils/helper";
 
 export default function Home() {
   const [link, setLink] = useState<Facetime[]>([]);
-  useEffect(() => {
-    const fetchLinks = async () => {
-      try {
-        const response = await fetch("/api/links");
-        if (!response.ok) {
-          throw new Error("Failed to fetch data");
-        }
+  const [inputCodeString, setInputCodeString] = useState<string>("");
+  const [isWrongCode, setIsWrongCode] = useState<boolean>(false);
+  const [isVerifiedCode, setIsVerifiedCode] = useState<boolean>(false);
 
-        const data = (await response.json()) as ApiResponse<Facetime[]>;
-        setLink(data.data);
-      } catch (error) {
-        console.error("Error fetching data:", error);
-      }
-    };
+  const DisplayInput = () => {
+    return (
+      <div className="mb-5">
+        <form onSubmit={handleSubmit}>
+          <div className="form-row">
+            <div className="form-group col-md-2 mx-auto">
+              <label htmlFor="codeForLink">请输入链接代码：</label>
+              <input
+                type="number"
+                className="form-control form-control-lg my-4 col-md-4"
+                id="codeForLink"
+                aria-describedby="codeForLlink"
+                placeholder="4位数代码"
+                step="1"
+                value={inputCodeString}
+                onChange={(e) => setInputCodeString(e.target.value)}
+              />
+              <button type="submit" className="btn btn-lg btn-primary">
+                获取链接
+              </button>
+            </div>
+          </div>
+        </form>
+      </div>
+    );
+  };
+  const DisplayLink = () => {
+    return (
+      <div>
+        <p className="lead">
+          <a
+            className="btn btn-primary btn-lg fw-bold"
+            href={link[0]?.link}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            加入
+          </a>
+        </p>
+        <p className="lead">或复制这个网址并粘贴到浏览器： {link[0]?.link}</p>
+        <p>更新时间： {link[0] && formatDate(link[0])}</p>
+      </div>
+    );
+  };
 
-    void fetchLinks();
-  }, []);
+  const Loading = () => {
+    return (
+      <div>
+        <p>暂无链接。请重试。</p>
+      </div>
+    );
+  };
+
+  const handleSubmit = async (
+    event: React.FormEvent<HTMLFormElement>
+  ): Promise<void> => {
+    event.preventDefault(); // Prevent the default form submission behavior
+    const verifyResult = await verifyCode(inputCodeString);
+    // console.log("verifyResult: ", verifyResult);
+    if (verifyResult) {
+      setIsWrongCode(false);
+      setIsVerifiedCode(true);
+      setInputCodeString("");
+    } else {
+      setIsWrongCode(true);
+      setIsVerifiedCode(false);
+      setInputCodeString("");
+    }
+  };
+
+  const verifyCode = async (inputCodeString: string): Promise<boolean> => {
+    const code = parseInt(inputCodeString);
+    if (!code || isNaN(code) || code < 1000 || code > 9999) {
+      return false;
+    }
+    //query to check
+
+    try {
+      const data = await fetchLinkWithCode(inputCodeString);
+      // console.log("Verified code, data: ");
+      // console.log(data);
+      setLink(data);
+      return true;
+    } catch (error) {
+      console.log("Error in fetching link with code: ", error);
+      return false;
+    }
+  };
+
+  const WrongCode = () => {
+    return (
+      <div>
+        <p>链接代码错误。链接代码应为4位数, 请核对后重试。</p>
+      </div>
+    );
+  };
 
   return (
     <main id="home">
-      <div>
+      <div className="mb-5">
         <h1 className="title">一起视频！</h1>
       </div>
-      {link[0] && (
-        <div>
-          <p className="lead">
-            <a
-              className="btn btn-primary btn-lg fw-bold"
-              href={link[0]?.link}
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              加入
-            </a>
-          </p>
-          <p className="lead">或复制这个网址并粘贴到浏览器： {link[0].link}</p>
-          <p>更新时间： {formatDate(link[0])}</p>
-        </div>
-      )}
+      {(!isVerifiedCode || link.length < 1) && <DisplayInput />}
+
+      {isWrongCode && <WrongCode />}
+      {isVerifiedCode && (link.length > 0 ? <DisplayLink /> : <Loading />)}
     </main>
   );
 }
-
-// // ====================
-
-// import { type Facetime } from "@prisma/client";
-// import { useState, useEffect } from "react";
-// import { type CreateLinkRequest, type ApiResponse } from "~/types/types";
-// import { formatDate } from "~/utils/helper";
-
-// export default function Admin() {
-//   const [newLink, setNewLink] = useState("");
-//   const [links, setLinks] = useState<Facetime[]>([]);
-
-//   const fetchLinks = async () => {
-//     try {
-//       const response = await fetch("/api/links");
-//       if (!response.ok) {
-//         throw new Error("Failed to fetch data");
-//       }
-
-//       const data = (await response.json()) as ApiResponse<Facetime[]>;
-//       setLinks(data.data);
-//     } catch (error) {
-//       console.error("Error fetching data:", error);
-//     }
-//   };
-
-//   useEffect(() => {
-//     console.log("fetchin...");
-//     void fetchLinks();
-//   }, []);
-
-//   const handleInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-//     setNewLink(event.target.value);
-//   };
-
-//   const handleSubmit = () => {
-//     console.log("submitting...");
-//     const requestData: CreateLinkRequest = { link: newLink };
-
-//     fetch("/api/links", {
-//       method: "POST",
-//       headers: {
-//         "Content-Type": "application/json",
-//       },
-//       body: JSON.stringify(requestData),
-//     })
-//       .then((res) => res.json())
-//       .then((data: ApiResponse<Facetime>) => {
-//         void fetchLinks();
-//         console.log("New link added:", data.data);
-//       })
-//       .catch((error) => {
-//         console.error("Error adding new link:", error);
-//       });
-//   };
-
-//   return (
-//     <main id="admin">
-//       <div>
-//         <h1 className="title">管理员 Admin page</h1>
-//       </div>
-//       {links[0] && (
-//         <div>
-//           <p>Current Link 现有链接: {links[0].link} </p>
-//           <p> Created time 创建时间: {formatDate(links[0])}</p>
-//         </div>
-//       )}
-//       <div>
-//         <input
-//           type="text"
-//           placeholder="Enter a new link"
-//           value={newLink}
-//           onChange={handleInputChange}
-//         />
-//         <button className="btn btn-primary m-2" onClick={handleSubmit}>
-//           Update 更新
-//         </button>
-//       </div>
-//       <div className="mt-5">
-//         <p>List of history links 历史链接:</p>
-//         <div>
-//           {links.map((link) => (
-//             <p key={link.id}>
-//               {link.link} | {formatDate(link)}
-//             </p>
-//           ))}
-//         </div>
-//       </div>
-//     </main>
-//   );
-// }
