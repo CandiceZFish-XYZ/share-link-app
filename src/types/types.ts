@@ -1,13 +1,22 @@
-// Define the request body type for the POST request
-export interface CreateLinkRequest {
-  link: string;
-}
-
-// Define the response type for the API route
-export interface ApiResponse<T> {
-  data: T;
-}
-
 export interface ErrorResponse {
-  message: string;
+  error: string;
 }
+
+export type UrlLink = {
+  createdAt: Date;
+  url: string;
+  code: number;
+};
+
+export type UrlLinkWithCode = {
+  createdAt: Date;
+  url: string;
+  code: number;
+};
+
+export type ApiResult<T> = {
+  // data & loading for next section!
+  data: T | undefined;
+  loading: boolean;
+  errorCode: number | undefined;
+};

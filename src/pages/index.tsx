@@ -1,12 +1,15 @@
-import { type Facetime } from "@prisma/client";
 import { useState } from "react";
-import { formatDate, fetchLinkWithCode } from "~/utils/helper";
+import { formatDate } from "~/utils/helper";
+import { type UrlLink, type ApiResult } from "~/types/types";
+import Loading from "~/components/Loading";
 
 export default function Home() {
-  const [link, setLink] = useState<Facetime[]>([]);
+  const [linkResult, setLinkResult] = useState<ApiResult<UrlLink>>({
+    data: undefined,
+    loading: false,
+    errorCode: undefined,
+  });
   const [inputCodeString, setInputCodeString] = useState<string>("");
-  const [isWrongCode, setIsWrongCode] = useState<boolean>(false);
-  const [isVerifiedCode, setIsVerifiedCode] = useState<boolean>(false);
 
   const DisplayInput = () => {
     return (
@@ -34,75 +37,101 @@ export default function Home() {
       </div>
     );
   };
+
   const DisplayLink = () => {
     return (
       <div>
         <p className="lead">
           <a
             className="btn btn-primary btn-lg fw-bold"
-            href={link[0]?.link}
+            href={linkResult.data?.url}
             target="_blank"
             rel="noopener noreferrer"
           >
             加入
           </a>
         </p>
-        <p className="lead">或复制这个网址并粘贴到浏览器： {link[0]?.link}</p>
-        <p>更新时间： {link[0] && formatDate(link[0])}</p>
+        <p className="lead">
+          或复制这个网址并粘贴到浏览器： {linkResult.data?.url}
+        </p>
+        <p>
+          更新时间： {linkResult.data && formatDate(linkResult.data.createdAt)}
+        </p>
       </div>
     );
   };
 
-  const Loading = () => {
+  const ErrorMessage = () => {
+    if (linkResult.errorCode === 404) {
+      return (
+        <div>
+          <p>链接未找到。请重试。</p>
+        </div>
+      );
+    }
+
+    if (linkResult.errorCode === 403) {
+      return (
+        <div>
+          <p>链接代码错误。链接代码应为4位数, 请核对后重试。</p>
+        </div>
+      );
+    }
+
     return (
       <div>
-        <p>暂无链接。请重试。</p>
+        <p>发生错误。请重试。</p>
       </div>
     );
   };
 
-  const handleSubmit = async (
-    event: React.FormEvent<HTMLFormElement>
-  ): Promise<void> => {
-    event.preventDefault(); // Prevent the default form submission behavior
-    const verifyResult = await verifyCode(inputCodeString);
-    // console.log("verifyResult: ", verifyResult);
-    if (verifyResult) {
-      setIsWrongCode(false);
-      setIsVerifiedCode(true);
-      setInputCodeString("");
-    } else {
-      setIsWrongCode(true);
-      setIsVerifiedCode(false);
-      setInputCodeString("");
-    }
+  const handleSubmit = (event: React.FormEvent<HTMLFormElement>): void => {
+    event.preventDefault();
+    setLinkResult({
+      data: undefined,
+      loading: true,
+      errorCode: undefined,
+    });
+    void verifyCode(inputCodeString);
   };
 
-  const verifyCode = async (inputCodeString: string): Promise<boolean> => {
+  const verifyCode = async (inputCodeString: string): Promise<void> => {
     const code = parseInt(inputCodeString);
     if (!code || isNaN(code) || code < 1000 || code > 9999) {
-      return false;
+      setLinkResult({
+        data: undefined,
+        loading: false,
+        errorCode: 403,
+      });
+      return;
     }
-    //query to check
 
     try {
-      const data = await fetchLinkWithCode(inputCodeString);
-      // console.log("Verified code, data: ");
-      // console.log(data);
-      setLink(data);
-      return true;
-    } catch (error) {
-      console.log("Error in fetching link with code: ", error);
-      return false;
-    }
-  };
+      const response = await fetch(`/api/links?code=${code}`);
+      if (!response.ok) {
+        setLinkResult({
+          data: undefined,
+          loading: false,
+          errorCode: response.status,
+        });
+        return;
+      }
 
-  const WrongCode = () => {
-    return (
-      <div>
-        <p>链接代码错误。链接代码应为4位数, 请核对后重试。</p>
-      </div>
-    );
+      const data = (await response.json()) as UrlLink;
+      setLinkResult({
+        data: data,
+        loading: false,
+        errorCode: undefined,
+      });
+    } catch (error) {
+      console.error("Error fetching link with code:");
+      console.error(error);
+      // setLinkResult({
+      //   data: undefined,
+      //   loading: false,
+      //   errorCode: error.code,
+      // });
+    }
   };
 
   return (
@@ -110,10 +139,9 @@ export default function Home() {
       <div className="mb-5">
         <h1 className="title">一起视频！</h1>
       </div>
-      {(!isVerifiedCode || link.length < 1) && <DisplayInput />}
-
-      {isWrongCode && <WrongCode />}
-      {isVerifiedCode && (link.length > 0 ? <DisplayLink /> : <Loading />)}
+      {linkResult.data ? <DisplayLink /> : <DisplayInput />}
+      {linkResult.loading && <Loading />}
+      {linkResult.errorCode && <ErrorMessage />}
     </main>
   );
 }

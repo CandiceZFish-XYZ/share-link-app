@@ -11,10 +11,10 @@ generator client {
   provider = "prisma-client-js"
 }
 
-model Facetime {
+model UrlLinks {
     id        String   @id @default(cuid())
     createdAt DateTime @default(now())
-    link      String
+    url      String
     code      Int
 }
 
