@@ -23,6 +23,31 @@ export async function createLink(
       return res.status(400).json({ error: "Url is required" });
     }
 
+    // Maintain database to have only 10 entries
+    const maxEntries = 10;
+    const totalEntries = await prismaClient.urlLinks.count();
+
+    // Delete earliest entries if needed
+    if (totalEntries >= maxEntries) {
+      const entriesToDelete = totalEntries - maxEntries + 1; // Calculate how many entries to delete
+      const earliestEntries = await prismaClient.urlLinks.findMany({
+        orderBy: {
+          createdAt: "asc", // Order by createdAt in ascending order (earliest first)
+        },
+        take: entriesToDelete, // Limit the number of entries to delete
+      });
+
+      // Delete the earliest entries
+      for (const entry of earliestEntries) {
+        await prismaClient.urlLinks.delete({
+          where: {
+            id: entry.id,
+          },
+        });
+      }
+    }
+
+    // Generate code for new url
     let code;
     const maxAttempt = 5;
     let numAttempt = 0;
