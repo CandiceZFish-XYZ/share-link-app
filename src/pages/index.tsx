@@ -11,33 +11,6 @@ export default function Home() {
   });
   const [inputCodeString, setInputCodeString] = useState<string>("");
 
-  const DisplayInput = () => {
-    return (
-      <div className="mb-5">
-        <form onSubmit={handleSubmit}>
-          <div className="form-row">
-            <div className="form-group col-md-2 mx-auto">
-              <label htmlFor="codeForLink">请输入链接代码：</label>
-              <input
-                type="number"
-                className="form-control form-control-lg my-4 col-md-4"
-                id="codeForLink"
-                aria-describedby="codeForLlink"
-                placeholder="4位数代码"
-                step="1"
-                value={inputCodeString}
-                onChange={(e) => setInputCodeString(e.target.value)}
-              />
-              <button type="submit" className="btn btn-lg btn-primary">
-                获取链接
-              </button>
-            </div>
-          </div>
-        </form>
-      </div>
-    );
-  };
-
   const DisplayLink = () => {
     return (
       <div>
@@ -139,9 +112,52 @@ export default function Home() {
       <div className="mb-5">
         <h1 className="title">一起视频！</h1>
       </div>
-      {linkResult.data ? <DisplayLink /> : <DisplayInput />}
+      {linkResult.data ? (
+        <DisplayLink />
+      ) : (
+        <DisplayInput
+          handleSubmit={handleSubmit}
+          inputCodeString={inputCodeString}
+          setInputCodeString={setInputCodeString}
+        />
+      )}
       {linkResult.loading && <Loading />}
       {linkResult.errorCode && <ErrorMessage />}
     </main>
+  );
+}
+
+function DisplayInput({
+  handleSubmit,
+  inputCodeString,
+  setInputCodeString,
+}: {
+  handleSubmit: (event: React.FormEvent<HTMLFormElement>) => void;
+  inputCodeString: string;
+  setInputCodeString: React.Dispatch<React.SetStateAction<string>>;
+}) {
+  return (
+    <div className="mb-5">
+      <form onSubmit={handleSubmit}>
+        <div className="form-row">
+          <div className="form-group col-md-2 mx-auto">
+            <label htmlFor="codeForLink">请输入链接代码：</label>
+            <input
+              type="number"
+              className="form-control form-control-lg my-4 col-md-4"
+              id="codeForLink"
+              aria-describedby="codeForLlink"
+              placeholder="4位数代码"
+              step="1"
+              value={inputCodeString}
+              onChange={(e) => setInputCodeString(e.target.value)}
+            />
+            <button type="submit" className="btn btn-lg btn-primary">
+              获取链接
+            </button>
+          </div>
+        </div>
+      </form>
+    </div>
   );
 }

@@ -3,16 +3,6 @@ import { type ErrorResponse } from "~/types/types";
 import { generateCode } from "~/utils/helper";
 import { prismaClient } from "./prisma-client";
 
-export interface CreateLinkRequest {
-  url: string;
-}
-
-export interface CreateLinkResponse {
-  url: string;
-  createdAt: Date;
-  code: number;
-}
-
 export async function createLink(
   req: NextApiRequest,
   res: NextApiResponse<CreateLinkResponse | ErrorResponse>
@@ -88,4 +78,14 @@ export async function createLink(
     console.error("Error in creating linking API:", error);
     res.status(500).json({ error: `Error in creating linking API.` });
   }
+}
+
+export interface CreateLinkRequest {
+  url: string;
+}
+
+export interface CreateLinkResponse {
+  url: string;
+  createdAt: Date;
+  code: number;
 }
