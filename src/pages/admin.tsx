@@ -4,12 +4,9 @@ import { type GetLinksResponse } from "~/apis/get-links";
 import Loading from "~/components/Loading";
 import { type ApiResult, type UrlLink } from "~/types/types";
 import { formatDate } from "~/utils/helper";
-import { SignIn, SignOutButton, useSession } from "@clerk/nextjs";
+import { SignOutButton } from "@clerk/nextjs";
 
 export default function Admin() {
-  // Check if the user is authenticated
-  const { isSignedIn, isLoaded } = useSession();
-
   const [inputNewLink, setInputNewLink] = useState("");
   const [links, setLinks] = useState<ApiResult<UrlLink[]>>({
     data: undefined,
@@ -23,7 +20,7 @@ export default function Admin() {
   useEffect(() => {
     async function fetchData() {
       try {
-        const response = await fetch("/api/links");
+        const response = await fetch("/api/private-links");
         const data = (await response.json()) as GetLinksResponse;
         setLinks({
           data: data.links,
@@ -90,7 +87,7 @@ export default function Admin() {
   const handleAsyncSubmit = async (): Promise<void> => {
     const requestData: CreateLinkRequest = { url: inputNewLink };
     try {
-      const response = await fetch("/api/links", {
+      const response = await fetch("/api/private-links", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -171,20 +168,11 @@ export default function Admin() {
     );
   };
 
-  if (!isLoaded) {
-    // Handle loading state
-    return <div>Loading...</div>;
-  }
-
-  if (!isSignedIn) {
-    return <SignIn />;
-  }
-
   return (
     <main id="admin">
       <div>
         <SignOutButton>
-          <button className="btn btn-danger btn-sm">Sign Out</button>
+          <button className="btn btn-sm btn-danger">Sign out</button>
         </SignOutButton>
         <h1 className="title">管理员 Admin page</h1>
       </div>
