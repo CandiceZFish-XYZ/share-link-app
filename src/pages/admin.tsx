@@ -4,14 +4,12 @@ import { type GetLinksResponse } from "~/apis/get-links";
 import Loading from "~/components/Loading";
 import { type ApiResult, type UrlLink } from "~/types/types";
 import { formatDate } from "~/utils/helper";
-
-type LinkWithCode = {
-  createdAt: Date;
-  url: string;
-  code: number;
-};
+import { SignIn, SignOutButton, useSession } from "@clerk/nextjs";
 
 export default function Admin() {
+  // Check if the user is authenticated
+  const { isSignedIn, isLoaded } = useSession();
+
   const [inputNewLink, setInputNewLink] = useState("");
   const [links, setLinks] = useState<ApiResult<UrlLink[]>>({
     data: undefined,
@@ -173,11 +171,21 @@ export default function Admin() {
     );
   };
 
-  // console.log("links data: ");
-  // console.log(links.data);
+  if (!isLoaded) {
+    // Handle loading state
+    return <div>Loading...</div>;
+  }
+
+  if (!isSignedIn) {
+    return <SignIn />;
+  }
+
   return (
     <main id="admin">
       <div>
+        <SignOutButton>
+          <button className="btn btn-danger btn-sm">Sign Out</button>
+        </SignOutButton>
         <h1 className="title">管理员 Admin page</h1>
       </div>
       {links.data && <CurrentLink />}
@@ -199,3 +207,9 @@ export default function Admin() {
     </main>
   );
 }
+
+type LinkWithCode = {
+  createdAt: Date;
+  url: string;
+  code: number;
+};

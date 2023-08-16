@@ -1,14 +1,9 @@
 import { type AppType } from "next/app";
 import "~/styles/bootstrap.min.css";
 import Head from "next/head";
-// import { useRouter } from "next/router";
+import { ClerkProvider } from "@clerk/nextjs";
 
 const MyApp: AppType = ({ Component, pageProps }) => {
-  // const router = useRouter();
-  // if (router.pathname.startsWith("/admin")) {
-  //   return <Component {...pageProps} />;
-  // }
-
   return (
     <>
       <Head>
@@ -18,11 +13,13 @@ const MyApp: AppType = ({ Component, pageProps }) => {
         {/* <link rel="stylesheet" type="text/css" href="custom.css" /> */}
         <link rel="icon" href="/favicon.ico" />
       </Head>
-      <div className="d-flex text-center text-bg-dark">
-        <div className="cover-container d-flex w-100 h-100 p-3 mx-auto flex-column m-5">
-          <Component {...pageProps} />
+      <ClerkProvider {...pageProps}>
+        <div className="d-flex text-center text-bg-dark">
+          <div className="cover-container d-flex w-100 h-100 p-3 mx-auto flex-column m-5">
+            <Component {...pageProps} />
+          </div>
         </div>
-      </div>
+      </ClerkProvider>
     </>
   );
 };
