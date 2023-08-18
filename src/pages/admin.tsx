@@ -4,7 +4,7 @@ import { type GetLinksResponse } from "~/apis/get-links";
 import Loading from "~/components/Loading";
 import { type ApiResult, type UrlLink } from "~/types/types";
 import { formatDate } from "~/utils/helper";
-import { SignOutButton } from "@clerk/nextjs";
+import { SignOutButton, UserButton } from "@clerk/nextjs";
 
 export default function Admin() {
   const [inputNewLink, setInputNewLink] = useState("");
@@ -20,7 +20,7 @@ export default function Admin() {
   useEffect(() => {
     async function fetchData() {
       try {
-        const response = await fetch("/api/private-links");
+        const response = await fetch("/api/my/links");
         const data = (await response.json()) as GetLinksResponse;
         setLinks({
           data: data.links,
@@ -50,7 +50,6 @@ export default function Admin() {
   };
 
   const validateUrl = (url: string) => {
-    console.log("validating");
     try {
       const parsedUrl = new URL(url);
 
@@ -66,11 +65,11 @@ export default function Admin() {
 
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>): void => {
     event.preventDefault();
-    setLinks({
-      data: undefined,
+    setLinks((prev) => ({
+      data: prev.data,
       loading: true,
       errorCode: undefined,
-    });
+    }));
 
     const isCorrectUrl = validateUrl(inputNewLink);
     if (!isCorrectUrl) {
@@ -87,7 +86,7 @@ export default function Admin() {
   const handleAsyncSubmit = async (): Promise<void> => {
     const requestData: CreateLinkRequest = { url: inputNewLink };
     try {
-      const response = await fetch("/api/private-links", {
+      const response = await fetch("/api/my/links", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -106,8 +105,8 @@ export default function Admin() {
       }
 
       const data = (await response.json()) as LinkWithCode;
-      setLinks((prevLinks) => ({
-        data: [data as UrlLink, ...(prevLinks.data ?? [])],
+      setLinks((prev) => ({
+        data: [data as UrlLink, ...(prev.data ?? [])],
         loading: false,
         errorCode: undefined,
       }));
@@ -174,6 +173,10 @@ export default function Admin() {
         <SignOutButton>
           <button className="btn btn-sm btn-danger">Sign out</button>
         </SignOutButton>
+        {/* <div>
+          <UserButton afterSignOutUrl="/" />
+        </div> */}
+
         <h1 className="title">管理员 Admin page</h1>
       </div>
       {links.data && <CurrentLink />}

@@ -16,5 +16,6 @@ model UrlLinks {
     createdAt DateTime @default(now())
     url      String
     code      Int
+    userId    String   // Store Clerk user's ID as foreign key
 }
 

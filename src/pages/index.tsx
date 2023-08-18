@@ -2,6 +2,7 @@ import { useState } from "react";
 import { formatDate } from "~/utils/helper";
 import { type UrlLink, type ApiResult } from "~/types/types";
 import Loading from "~/components/Loading";
+import Link from "next/link";
 
 export default function Home() {
   const [linkResult, setLinkResult] = useState<ApiResult<UrlLink>>({
@@ -60,11 +61,11 @@ export default function Home() {
 
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>): void => {
     event.preventDefault();
-    setLinkResult({
-      data: undefined,
+    setLinkResult((prev) => ({
+      data: prev.data,
       loading: true,
       errorCode: undefined,
-    });
+    }));
     void verifyCode(inputCodeString);
   };
 
@@ -112,17 +113,24 @@ export default function Home() {
       <div className="mb-5">
         <h1 className="title">一起视频！</h1>
       </div>
-      {linkResult.data ? (
-        <DisplayLink />
-      ) : (
-        <DisplayInput
-          handleSubmit={handleSubmit}
-          inputCodeString={inputCodeString}
-          setInputCodeString={setInputCodeString}
-        />
-      )}
-      {linkResult.loading && <Loading />}
-      {linkResult.errorCode && <ErrorMessage />}
+      <div>
+        {linkResult.data ? (
+          <DisplayLink />
+        ) : (
+          <DisplayInput
+            handleSubmit={handleSubmit}
+            inputCodeString={inputCodeString}
+            setInputCodeString={setInputCodeString}
+          />
+        )}
+        {linkResult.loading && <Loading />}
+        {linkResult.errorCode && <ErrorMessage />}
+      </div>
+      <div className="mt-5">
+        <Link className="btn btn-sm btn-warning" href="/admin">
+          创建链接
+        </Link>
+      </div>
     </main>
   );
 }
