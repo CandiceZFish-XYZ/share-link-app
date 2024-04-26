@@ -3,8 +3,18 @@ import { formatDate } from "~/utils/helper";
 import { type UrlLink, type ApiResult } from "~/types/types";
 import Loading from "~/components/Loading";
 import Link from "next/link";
+import Button from "react-bootstrap/Button";
+import Modal from "react-bootstrap/Modal";
+import Col from "react-bootstrap/Col";
+import Row from "react-bootstrap/Row";
+import Form from "react-bootstrap/Form";
 
 export default function Home() {
+  const [show, setShow] = useState(false);
+
+  const handleClose = () => setShow(false);
+  const handleShow = () => setShow(true);
+
   const [linkResult, setLinkResult] = useState<ApiResult<UrlLink>>({
     data: undefined,
     loading: false,
@@ -110,26 +120,40 @@ export default function Home() {
 
   return (
     <main id="home">
-      <div className="mb-5">
-        <h1 className="title">一起视频！</h1>
-      </div>
-      <div>
-        {linkResult.data ? (
-          <DisplayLink />
-        ) : (
-          <DisplayInput
-            handleSubmit={handleSubmit}
-            inputCodeString={inputCodeString}
-            setInputCodeString={setInputCodeString}
-          />
-        )}
-        {linkResult.loading && <Loading />}
-        {linkResult.errorCode && <ErrorMessage />}
-      </div>
-      <div className="mt-5">
-        <Link className="btn btn-sm btn-warning" href="/admin">
-          创建链接
-        </Link>
+      <Row className="mb-5 justify-content-center">
+        <Col xs="auto" as="h1">
+          一起视频！
+        </Col>
+      </Row>
+      <Row className="justify-content-center">
+        <Col xs="auto">
+          {linkResult.data ? (
+            <DisplayLink />
+          ) : (
+            <DisplayInput
+              handleSubmit={handleSubmit}
+              inputCodeString={inputCodeString}
+              setInputCodeString={setInputCodeString}
+            />
+          )}
+          {linkResult.loading && <Loading />}
+          {linkResult.errorCode && <ErrorMessage />}
+        </Col>
+      </Row>
+      <div className="mt-5 p-2 text-secondary">
+        <Row className="mb-2">不知道从哪里开始？</Row>
+        <Row className="justify-content-center">
+          <Col>
+            <Button variant="primary" size="sm" onClick={handleShow}>
+              查看帮助
+            </Button>
+            <div className="d-inline p-2">或者</div>
+
+            <Link className="btn btn-sm btn-warning" href="/admin">
+              创建链接
+            </Link>
+          </Col>
+        </Row>
       </div>
     </main>
   );
@@ -146,26 +170,23 @@ function DisplayInput({
 }) {
   return (
     <div className="mb-5">
-      <form onSubmit={handleSubmit}>
-        <div className="form-row">
-          <div className="form-group col-md-2 mx-auto">
-            <label htmlFor="codeForLink">请输入链接代码：</label>
-            <input
-              type="number"
-              className="form-control form-control-lg my-4 col-md-4"
-              id="codeForLink"
-              aria-describedby="codeForLlink"
-              placeholder="4位数代码"
-              step="1"
-              value={inputCodeString}
-              onChange={(e) => setInputCodeString(e.target.value)}
-            />
-            <button type="submit" className="btn btn-lg btn-primary">
-              获取链接
-            </button>
-          </div>
-        </div>
-      </form>
+      <Form onSubmit={handleSubmit}>
+        <Form.Group controlId="codeForLlink">
+          <Form.Label>请输入链接代码：</Form.Label>
+          <Form.Control
+            type="number"
+            className="form-control form-control-lg my-4 col-md-4"
+            aria-describedby="codeForLlink"
+            placeholder="4位数代码"
+            step="1"
+            value={inputCodeString}
+            onChange={(e) => setInputCodeString(e.target.value)}
+          />
+          <Button type="submit" variant="primary">
+            获取链接
+          </Button>
+        </Form.Group>
+      </Form>
     </div>
   );
 }
