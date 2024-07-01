@@ -105,6 +105,7 @@ export default function Admin() {
       }
 
       const data = (await response.json()) as LinkWithCode;
+
       setLinks((prev) => ({
         data: [data as UrlLink, ...(prev.data ?? [])],
         loading: false,

@@ -1,8 +1,10 @@
 import { type NextApiRequest, type NextApiResponse } from "next";
 import { type ErrorResponse } from "~/types/types";
 import { generateCode } from "~/utils/helper";
-import { prismaClient } from "./prisma-client";
 import { getAuth } from "@clerk/nextjs/server";
+import { count, asc, eq } from "drizzle-orm";
+import { db } from "../drizzle/db";
+import { urlLinks } from "~/drizzle/schema";
 
 export async function createLink(
   req: NextApiRequest,
@@ -32,20 +34,33 @@ export async function createLink(
       return;
     }
 
-    // save to database
-    const newLink = await prismaClient.urlLinks.create({
-      data: {
+    // Insert entry into database
+    const newLinkArr = await db
+      .insert(urlLinks)
+      .values({
         url,
         code,
         userId: userId!,
-      },
-    });
+      })
+      .returning();
 
-    res.status(200).json({
-      url: newLink.url,
-      createdAt: newLink.createdAt,
-      code: newLink.code,
-    });
+    // check returned entry of insertion
+    if (newLinkArr.length < 1) {
+      res.status(500).json({ error: `Failed to insert entry.` });
+      return;
+    }
+
+    const newLink = newLinkArr[0];
+
+    if (newLink) {
+      res.status(200).json({
+        url: newLink.url,
+        createdAt: newLink.createdAt!,
+        code: newLink.code,
+      });
+    } else {
+      res.status(500).json({ error: `Failed to retrieve the inserted entry.` });
+    }
   } catch (error) {
     console.error("Error in creating linking API:", error);
     res.status(500).json({ error: `Error in creating linking API.` });
@@ -63,25 +78,21 @@ export interface CreateLinkResponse {
 }
 
 async function maintainDB(maxEntries: number) {
-  const totalEntries = await prismaClient.urlLinks.count();
+  const countResult = await db.select({ count: count() }).from(urlLinks);
+  const totalEntries = countResult[0]?.count ?? 0;
 
   // Delete earliest entries if needed
   if (totalEntries >= maxEntries) {
     const entriesToDelete = totalEntries - maxEntries + 1; // Calculate how many entries to delete
-    const earliestEntries = await prismaClient.urlLinks.findMany({
-      orderBy: {
-        createdAt: "asc", // Order by createdAt in ascending order (earliest first)
-      },
-      take: entriesToDelete, // Limit the number of entries to delete
-    });
+    const earliestEntries = await db
+      .select()
+      .from(urlLinks)
+      .orderBy(asc(urlLinks.createdAt))
+      .limit(entriesToDelete);
 
     // Delete the earliest entries
     for (const entry of earliestEntries) {
-      await prismaClient.urlLinks.delete({
-        where: {
-          id: entry.id,
-        },
-      });
+      await db.delete(urlLinks).where(eq(urlLinks.id, entry.id));
     }
   }
 }
@@ -93,13 +104,19 @@ async function getValidCode(): Promise<number> {
   while (true) {
     code = generateCode();
 
-    const existingLink = await prismaClient.urlLinks.findFirst({
-      where: {
-        code: code,
-      },
-    });
+    const existingLink = await db
+      .select()
+      .from(urlLinks)
+      .where(eq(urlLinks.code, code))
+      .limit(1);
 
-    if (!existingLink) {
+    // const existingLink = await db.query.urlLinks.findFirst({
+    //   with: {
+    //     code: code,
+    //   },
+    // });
+
+    if (existingLink.length < 1) {
       break;
     }
 

@@ -1,0 +1,20 @@
+{
+  "version": "5",
+  "dialect": "pg",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "5",
+      "when": 1718903050928,
+      "tag": "0000_big_emma_frost",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1718907204984,
+      "tag": "0001_solid_deathstrike",
+      "breakpoints": true
+    }
+  ]
+}
